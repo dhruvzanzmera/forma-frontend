@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import { categoriesService } from "../services/categories";
-import { cartService } from "../services/cart";
 import { Home } from "../pages/store/HomePage";
 import { ProductsPage } from "../pages/store/ProductsPage";
 import { ProductDetails } from "../pages/store/ProductDetailsPage";
@@ -10,7 +10,6 @@ import { Footer, Header, StoreLayout } from "../layouts/StoreLayout";
 import { CartPage } from "../pages/account/CartPage";
 import { Busy, ErrorState } from "../components/Feedback";
 import { getError, responseData } from "../utils/format";
-import { notifyCartChanged } from "../utils/cartEvents";
 
 export function StoreRoute() {
   const location = useLocation();
@@ -20,31 +19,16 @@ export function StoreRoute() {
 
 export function StorePage({ location, isAuthenticated }) {
   const [categories, setCategories] = useState([]);
-  const [cart, setCart] = useState(null);
+  // Cart count and refresh come from the global CartContext.
+  const { cartCount, refreshCart } = useCart();
+
   useEffect(() => {
     categoriesService
       .list()
       .then((res) => setCategories(responseData(res) || []))
       .catch(() => {});
   }, []);
-  const refreshCart = () =>
-    isAuthenticated
-      ? cartService
-          .get()
-          .then((res) => {
-            setCart(responseData(res));
-            notifyCartChanged();
-          })
-          .catch(() => {})
-      : Promise.resolve();
-  useEffect(() => {
-    if (isAuthenticated) refreshCart();
-    else setCart(null);
-  }, [isAuthenticated]);
-  const count =
-    cart?.itemsCount ??
-    cart?.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) ??
-    0;
+
   let page;
   if (location.pathname === "/")
     page = <Home categories={categories} refreshCart={refreshCart} />;
@@ -53,9 +37,10 @@ export function StorePage({ location, isAuthenticated }) {
   else if (location.pathname === "/products" || location.pathname === "/search")
     page = <ProductsPage refreshCart={refreshCart} />;
   else page = <ProductDetails refreshCart={refreshCart} />;
+
   return (
     <div className="store-shell">
-      <Header categories={categories} cartCount={count} />
+      <Header categories={categories} cartCount={cartCount} />
       <main className="store-main">{page}</main>
       <Footer />
     </div>
@@ -99,10 +84,7 @@ export function CategoryProducts({ refreshCart }) {
 }
 
 export function CartRoute() {
-  const refreshCart = () => {
-    notifyCartChanged();
-    return Promise.resolve();
-  };
+  const { refreshCart } = useCart();
   return (
     <StoreLayout>
       <CartPage refreshCart={refreshCart} />

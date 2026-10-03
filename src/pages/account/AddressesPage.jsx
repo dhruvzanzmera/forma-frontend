@@ -112,6 +112,7 @@ export function AddressFormPage() {
     isDefault: false,
   });
   const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (id)
       addressesService
@@ -131,12 +132,15 @@ export function AddressFormPage() {
     });
   const submit = async (event) => {
     event.preventDefault();
+    setBusy(true);
     try {
       if (id) await addressesService.update(id, form);
       else await addressesService.create(form);
       navigate("/addresses");
     } catch (error) {
       setNotice(getError(error));
+    } finally {
+      setBusy(false);
     }
   };
   return (
@@ -173,8 +177,8 @@ export function AddressFormPage() {
           />{" "}
           Set as default address
         </label>
-        <button className="button dark span-two">
-          Save address <Check size={15} />
+        <button className="button dark span-two" disabled={busy}>
+          {busy ? "Saving…" : "Save address"} <Check size={15} />
         </button>
       </form>
     </AccountLayout>

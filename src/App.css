@@ -3047,3 +3047,103 @@ td strong {
     flex-direction: column;
   }
 }
+
+/* ─── Global API Loader ─────────────────────────────────────────────── */
+
+/* Top progress bar */
+.global-top-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.global-top-progress.active {
+  opacity: 1;
+}
+.global-top-progress-bar {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--clay, #b5835a) 0%,
+    #e2a97e 50%,
+    var(--clay, #b5835a) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 0 3px 3px 0;
+  transition: width 0.25s ease-out, opacity 0.25s ease;
+  box-shadow: 0 0 10px rgba(181, 131, 90, 0.6);
+  animation: progress-shimmer 1.4s linear infinite;
+}
+@keyframes progress-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Floating process indicator (bottom-right) */
+.global-floating-loader {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--ink, #1a1a18);
+  color: #fff;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(12px) scale(0.95);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.global-floating-loader.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.global-loader-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+.global-loader-text {
+  white-space: nowrap;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Per-button loading utility ───────────────────────────────────── */
+/* Usage: add class "btn-loading" to a <button> while awaiting an action */
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+.btn-loading::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+

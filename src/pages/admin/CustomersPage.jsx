@@ -167,18 +167,24 @@ export function AdminCustomerDetail({ ordersOnly = false }) {
   const [data, setData] = useState(null);
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
+    setLoading(true);
     if (ordersOnly)
       adminCustomersService
         .orders(id, { page: 1, limit: 10 })
         .then((res) => setOrders(responseData(res) || []))
-        .catch((err) => setError(getError(err)));
+        .catch((err) => setError(getError(err)))
+        .finally(() => setLoading(false));
     else
       adminCustomersService
         .get(id)
         .then((res) => setData(responseData(res)))
-        .catch((err) => setError(getError(err)));
+        .catch((err) => setError(getError(err)))
+        .finally(() => setLoading(false));
   }, [id, ordersOnly]);
+
   const customer = data?.customer || data;
   return (
     <AdminLayout title={ordersOnly ? "Customer orders" : "Customer details"}>
@@ -186,7 +192,9 @@ export function AdminCustomerDetail({ ordersOnly = false }) {
         <ArrowLeft size={15} /> Customers
       </Link>
       <Notice>{error}</Notice>
-      {ordersOnly ? (
+      {loading ? (
+        <Busy label={ordersOnly ? "Loading customer orders..." : "Loading customer profile..."} />
+      ) : ordersOnly ? (
         <>
           <div className="admin-heading">
             <div>
@@ -204,6 +212,7 @@ export function AdminCustomerDetail({ ordersOnly = false }) {
               <h1>{customer?.name}</h1>
               <p>{customer?.email}</p>
             </div>
+
             <Link
               className="button secondary"
               to={`/admin/customers/${id}/orders`}

@@ -255,7 +255,9 @@ export function AdminOrderDetails() {
   const { id } = useParams();
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
+    setLoading(true);
     adminOrdersService
       .list({ page: 1, limit: 50 })
       .then((res) => {
@@ -267,7 +269,8 @@ export function AdminOrderDetails() {
             "Order is not included in the first page of results. Find it using order search.",
           );
       })
-      .catch((err) => setError(getError(err)));
+      .catch((err) => setError(getError(err)))
+      .finally(() => setLoading(false));
   }, [id]);
   return (
     <AdminLayout title="Order details">
@@ -285,7 +288,11 @@ export function AdminOrderDetails() {
         </div>
       </div>
       {error && <Notice>{error}</Notice>}
-      {orders.length > 0 && <OrdersTable orders={orders} />}
+      {loading ? (
+        <Busy label="Loading order details..." />
+      ) : (
+        orders.length > 0 && <OrdersTable orders={orders} />
+      )}
     </AdminLayout>
   );
 }

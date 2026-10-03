@@ -3,20 +3,58 @@ import axios from 'axios'
 export const TOKEN_KEY = 'atelier_access_token'
 export const USER_KEY = 'atelier_current_user'
 
+let activeRequests = 0
+const listeners = new Set()
+
+const notifyListeners = () => {
+  listeners.forEach((listener) => {
+    try {
+      listener(activeRequests)
+    } catch (e) {
+      console.error('[ApiLoader] listener error:', e)
+    }
+  })
+}
+
+export const subscribeToApiLoading = (callback) => {
+  listeners.add(callback)
+  callback(activeRequests)
+  return () => {
+    listeners.delete(callback)
+  }
+}
+
+export const getActiveRequestCount = () => activeRequests
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1',
   headers: { 'Content-Type': 'application/json' },
 })
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(TOKEN_KEY)
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
+api.interceptors.request.use(
+  (config) => {
+    activeRequests += 1
+    notifyListeners()
+    const token = localStorage.getItem(TOKEN_KEY)
+    if (token) config.headers.Authorization = `Bearer ${token}`
+    return config
+  },
+  (error) => {
+    activeRequests = Math.max(0, activeRequests - 1)
+    notifyListeners()
+    return Promise.reject(error)
+  },
+)
 
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    activeRequests = Math.max(0, activeRequests - 1)
+    notifyListeners()
+    return response.data
+  },
   (error) => {
+    activeRequests = Math.max(0, activeRequests - 1)
+    notifyListeners()
     const status = error.response?.status
     if (status === 401) {
       localStorage.removeItem(TOKEN_KEY)
@@ -40,4 +78,4 @@ api.interceptors.response.use(
   },
 )
 
-export default api
+export default api

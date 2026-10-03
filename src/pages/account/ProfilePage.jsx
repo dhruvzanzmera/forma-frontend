@@ -12,6 +12,7 @@ export function ProfilePage() {
   const { user, setUser } = useAuth();
   const [profile, setProfile] = useState({ name: user?.name || "", phone: "" });
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [notice, show] = useNotice();
   useEffect(() => {
     usersService
@@ -27,6 +28,7 @@ export function ProfilePage() {
   }, []);
   const submit = async (event) => {
     event.preventDefault();
+    setBusy(true);
     try {
       const res = await usersService.updateProfile(profile);
       setUser(responseData(res));
@@ -37,6 +39,8 @@ export function ProfilePage() {
       show("Your profile has been updated.");
     } catch (error) {
       show(getError(error));
+    } finally {
+      setBusy(false);
     }
   };
   return (
@@ -119,8 +123,8 @@ export function ProfilePage() {
                 }
               />
             </label>
-            <button className="button dark">
-              Save changes <Check size={15} />
+            <button className="button dark" disabled={busy}>
+              {busy ? "Saving…" : "Save changes"} <Check size={15} />
             </button>
           </form>
         </>

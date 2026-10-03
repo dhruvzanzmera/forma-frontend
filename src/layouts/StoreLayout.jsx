@@ -10,10 +10,9 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../context/CartContext";
 import { categoriesService } from "../services/categories";
-import { cartService } from "../services/cart";
 import { responseData } from "../utils/format";
-import { CART_EVENT } from "../utils/cartEvents";
 
 export function Header({ categories = [], cartCount = 0 }) {
   const { user } = useAuth();
@@ -82,7 +81,7 @@ export function Header({ categories = [], cartCount = 0 }) {
       </header>
       <div className="category-rail">
         <Link to="/products?featured=true">
-          New & notable <Sparkles size={13} />
+          New &amp; notable <Sparkles size={13} />
         </Link>
         {categories.slice(0, 6).map((category) => (
           <Link key={category._id} to={`/categories/${category.slug}`}>
@@ -109,35 +108,19 @@ export function Footer() {
 
 export function StoreLayout({ children }) {
   const [categories, setCategories] = useState([]);
-  const { isAuthenticated } = useAuth();
-  const [cart, setCart] = useState(null);
+  // Cart count comes from the global CartContext — no local fetching needed.
+  const { cartCount } = useCart();
+
   useEffect(() => {
     categoriesService
       .list()
       .then((res) => setCategories(responseData(res) || []))
       .catch(() => {});
   }, []);
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setCart(null);
-      return undefined;
-    }
-    const syncCart = () =>
-      cartService
-        .get()
-        .then((res) => setCart(responseData(res)))
-        .catch(() => setCart(null));
-    syncCart();
-    window.addEventListener(CART_EVENT, syncCart);
-    return () => window.removeEventListener(CART_EVENT, syncCart);
-  }, [isAuthenticated]);
-  const count =
-    cart?.itemsCount ??
-    cart?.items?.reduce((sum, item) => sum + Number(item.quantity || 0), 0) ??
-    0;
+
   return (
     <div className="store-shell">
-      <Header categories={categories} cartCount={count} />
+      <Header categories={categories} cartCount={cartCount} />
       <main className="store-main">{children}</main>
       <Footer />
     </div>

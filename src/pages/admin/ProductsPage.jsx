@@ -204,12 +204,14 @@ export function AdminProductForm() {
     isActive: true,
   });
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(Boolean(id));
   useEffect(() => {
     adminCategoriesService
       .list()
       .then((res) => setCategories(responseData(res) || []))
       .catch((err) => setError(getError(err)));
-    if (id)
+    if (id) {
+      setLoading(true);
       adminProductsService
         .list({ limit: 50 })
         .then((res) => {
@@ -229,7 +231,9 @@ export function AdminProductForm() {
               isActive: product.isActive,
             });
         })
-        .catch((err) => setError(getError(err)));
+        .catch((err) => setError(getError(err)))
+        .finally(() => setLoading(false));
+    }
   }, [id]);
   const change = (key) => (event) =>
     setForm({
