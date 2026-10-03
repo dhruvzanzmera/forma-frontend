@@ -19,7 +19,7 @@ export function AuthPage({ mode = "login", admin = false }) {
     email: location.state?.email || "",
     password: "",
     phone: "",
-    otp: "",
+    otp: location.state?.otp || "",
     newPassword: "",
     currentPassword: "",
   });
@@ -43,8 +43,12 @@ export function AuthPage({ mode = "login", admin = false }) {
           password: form.password,
           phone: form.phone,
         });
+        const regData = responseData(res);
         navigate("/verify-otp", {
-          state: { email: responseData(res)?.email || form.email },
+          state: {
+            email: regData?.email || form.email,
+            otp: regData?.otp || "",
+          },
         });
         return;
       }
@@ -218,7 +222,11 @@ export function AuthPage({ mode = "login", admin = false }) {
                   className="text-link"
                   onClick={async () => {
                     try {
-                      await authService.resendOtp({ email: form.email });
+                      const res = await authService.resendOtp({ email: form.email });
+                      const resData = responseData(res);
+                      if (resData?.otp) {
+                        setForm((prev) => ({ ...prev, otp: resData.otp }));
+                      }
                       setNotice("A new verification code has been sent.");
                     } catch (error) {
                       setNotice(getError(error));
