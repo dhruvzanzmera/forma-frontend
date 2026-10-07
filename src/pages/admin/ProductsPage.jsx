@@ -191,6 +191,8 @@ export function AdminProductForm() {
   const [categories, setCategories] = useState([]);
   const [files, setFiles] = useState([]);
   const [preview, setPreview] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [unavailableImages, setUnavailableImages] = useState(() => new Set());
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     name: "",
@@ -213,23 +215,21 @@ export function AdminProductForm() {
     if (id) {
       setLoading(true);
       adminProductsService
-        .list({ limit: 50 })
+        .get(id)
         .then((res) => {
-          const product = (responseData(res) || []).find(
-            (item) => item._id === id,
-          );
-          if (product)
-            setForm({
-              name: product.name,
-              description: product.description,
-              price: product.price,
-              discountPrice: product.discountPrice || 0,
-              stock: product.stock,
-              category: idOf(product.category),
-              sku: product.sku || "",
-              isFeatured: product.isFeatured,
-              isActive: product.isActive,
-            });
+          const product = responseData(res);
+          setExistingImages(product.images || []);
+          setForm({
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            discountPrice: product.discountPrice || 0,
+            stock: product.stock,
+            category: idOf(product.category),
+            sku: product.sku || "",
+            isFeatured: product.isFeatured,
+            isActive: product.isActive,
+          });
         })
         .catch((err) => setError(getError(err)))
         .finally(() => setLoading(false));
@@ -250,6 +250,13 @@ export function AdminProductForm() {
     const body = new FormData();
     Object.entries(form).forEach(([key, value]) => body.append(key, value));
     files.forEach((file) => body.append("images", file));
+    if (id) {
+      const imagesToKeep =
+        files.length > 0
+          ? existingImages.filter((image) => !unavailableImages.has(image))
+          : existingImages;
+      body.append("existingImages", JSON.stringify(imagesToKeep));
+    }
     try {
       if (id) await adminProductsService.update(id, body);
       else await adminProductsService.create(body);
@@ -260,6 +267,13 @@ export function AdminProductForm() {
       setBusy(false);
     }
   };
+  if (loading) {
+    return (
+      <AdminLayout title="Edit product">
+        <Busy label="Loading product details..." />
+      </AdminLayout>
+    );
+  }
   return (
     <AdminLayout title={id ? "Edit product" : "Add product"}>
       <Link className="back-link" to="/admin/products">
@@ -353,10 +367,45 @@ export function AdminProductForm() {
               />
             </label>
             <div className="preview-row">
+              {existingImages.map((src) => (
+                <div className="image-preview" key={src}>
+                  {unavailableImages.has(src) ? (
+                    <span className="image-placeholder">
+                      Image unavailable. Upload a replacement.
+                    </span>
+                  ) : (
+                    <img
+                      src={imageUrl(src)}
+                      alt="Current product"
+                      onError={() =>
+                        setUnavailableImages((current) =>
+                          new Set(current).add(src),
+                        )
+                      }
+                    />
+                  )}
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() =>
+                      setExistingImages((current) =>
+                        current.filter((image) => image !== src),
+                      )
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
               {preview.map((src) => (
                 <img src={src} alt="Selected product preview" key={src} />
               ))}
             </div>
+            {id && (
+              <p className="field-hint">
+                Upload new images to replace unavailable ones, or remove images before saving.
+              </p>
+            )}
           </div>
           <label className="check-label">
             <input

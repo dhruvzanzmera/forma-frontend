@@ -2343,6 +2343,27 @@ td strong {
   height: 64px;
   object-fit: cover;
 }
+.image-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.image-preview img,
+.image-preview .image-placeholder {
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+}
+.image-preview .image-placeholder {
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 11px;
+  text-align: center;
+}
 .category-admin-layout {
   display: grid;
   grid-template-columns: minmax(260px, 340px) 1fr;
@@ -3146,4 +3167,3 @@ td strong {
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
-
